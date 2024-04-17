@@ -6,26 +6,22 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Service
 public class S3Service {
-    @Value("${sample-spring-boot-project}")
-    private String bucketName;
+	private final S3Client s3Client;
+    private final String bucketName;
 
-    private final AmazonS3 s3Client;
-
-    public S3Service(AmazonS3 s3Client) {
+    public S3Service(S3Client s3Client, @Value("${sample-spring-boot-project}") String bucketName) {
         this.s3Client = s3Client;
+        this.bucketName = bucketName;
     }
 
     public List<String> listObjects() {
-        ObjectListing objectListing = s3Client.listObjects(bucketName);
-        return objectListing.getObjectSummaries()
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .collect(Collectors.toList());
+        ListObjectsResponse response = s3Client.listObjects(builder -> builder.bucket(bucketName));
+        return response.contents().stream().map(S3Object::key).collect(Collectors.toList());
     }
 }
